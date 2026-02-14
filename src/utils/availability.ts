@@ -4,8 +4,6 @@ import {
     eachDayOfInterval,
     format,
     getDay,
-    isAfter,
-    isSameDay,
     parseISO,
     addDays,
     startOfDay,
