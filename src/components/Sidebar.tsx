@@ -48,7 +48,7 @@ const Sidebar: React.FC = () => {
             label: 'Configuración',
             path: '/settings',
             icon: <Settings size={20} />,
-            roles: ['ADMIN', 'MANAGER', 'MENTOR', 'COACH', 'ADVISOR', 'ENTREPRENEUR']
+            roles: ['ADMIN']
         },
     ];
 

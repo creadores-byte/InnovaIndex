@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Availability from './pages/Availability';
 import Scheduling from './pages/Scheduling';
 import UserManagement from './pages/UserManagement';
+import Settings from './pages/Settings';
 import './index.css';
 
 import Dashboard from './pages/Dashboard';
@@ -44,6 +45,7 @@ const App: React.FC = () => {
               {/* User Management Routes */}
               <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                 <Route path="/users" element={<UserManagement />} />
+                <Route path="/settings" element={<Settings />} />
               </Route>
             </Route>
           </Route>

@@ -1,8 +1,16 @@
 import type { User, Role, JourneyStep } from '../types';
 
-const SHEET_ID = '1UwExj6WycmRdKj5Ik_oetB1TnLCKo1bLKs2lo_KCLYg';
+const DEFAULT_SHEET_ID = '1UwExj6WycmRdKj5Ik_oetB1TnLCKo1bLKs2lo_KCLYg';
 const USERS_GID = '0'; // Usuarios y Beneficiarios
 const JOURNEYS_GID = '2104648175'; // Journey
+
+export const getSheetId = () => {
+    return localStorage.getItem('google_sheet_id') || DEFAULT_SHEET_ID;
+};
+
+export const saveSheetId = (id: string) => {
+    localStorage.setItem('google_sheet_id', id);
+};
 
 // Mapping from Sheet Role names to our internal Role type
 const ROLE_MAP: Record<string, Role> = {
@@ -57,7 +65,7 @@ const parseCSV = (csv: string) => {
 
 export const syncUsersFromSheet = async (): Promise<User[]> => {
     try {
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${USERS_GID}`;
+        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${USERS_GID}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch users from Google Sheets');
         const csvText = await response.text();
@@ -84,7 +92,7 @@ export const syncUsersFromSheet = async (): Promise<User[]> => {
 
 export const syncJourneysFromSheet = async (): Promise<JourneyStep[]> => {
     try {
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${JOURNEYS_GID}`;
+        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${JOURNEYS_GID}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch journeys from Google Sheets');
         const csvText = await response.text();
