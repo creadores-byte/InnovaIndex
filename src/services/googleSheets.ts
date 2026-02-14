@@ -115,6 +115,35 @@ export const syncJourneysFromSheet = async (): Promise<JourneyStep[]> => {
     }
 };
 
+export const createSheetStructure = async (token: string, spreadsheetId: string) => {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`;
+
+    const requests = [
+        { addSheet: { properties: { title: 'Usuarios y Beneficiarios', gridProperties: { rowCount: 100, columnCount: 10 } } } },
+        { addSheet: { properties: { title: 'Base empresas', gridProperties: { rowCount: 100, columnCount: 10 } } } },
+        { addSheet: { properties: { title: 'Journey', gridProperties: { rowCount: 100, columnCount: 10 } } } }
+    ];
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ requests })
+    });
+
+    if (!response.ok) {
+        const err = await response.json();
+        // If sheet already exists, we might get an error, but that's okay for an init
+        if (err.error?.message?.includes('already exists')) return true;
+        throw new Error('Failed to create sheets');
+    }
+
+    // Now add headers (Optional improvement: another batchUpdate for values)
+    return true;
+};
+
 export const getCachedJourneys = (): JourneyStep[] => {
     const cached = localStorage.getItem('synced_journeys');
     return cached ? JSON.parse(cached) : [];

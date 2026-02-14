@@ -1174,8 +1174,82 @@ h3 {
   text-decoration: underline;
 }
 
-.fade-in {
-  animation: fadeIn 0.6s ease-out;
+.btn-google {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.8rem 1.2rem;
+  background: white;
+  color: #4285f4;
+  border: 1.5px solid #4285f4;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-google:hover {
+  background: rgba(66, 133, 244, 0.05);
+  transform: translateY(-2px);
+}
+
+.btn-google.connected {
+  background: #4285f4;
+  color: white;
+  border-color: #4285f4;
+}
+
+.action-box-setup {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #fdf2f8;
+  border-radius: 16px;
+  border: 1px solid #fbcfe8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.setup-info h4 {
+  margin: 0 0 5px 0;
+  color: #be185d;
+}
+
+.setup-info p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #be185d;
+  opacity: 0.8;
+}
+
+.btn-magic {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.8rem 1.5rem;
+  background: #be185d;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-magic:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(190, 24, 93, 0.2);
+}
+
+.btn-magic:disabled {
+  background: #f9a8d4;
+  cursor: not-allowed;
+}
+
+.loading svg {
+  animation: spin 1s linear infinite;
 }
 
 @keyframes fadeIn {
