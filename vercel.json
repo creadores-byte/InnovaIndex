@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "framework": "vite",
+  "name": "app-comfandi",
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}

@@ -1,0 +1,125 @@
+import type { User, Role, JourneyStep } from '../types';
+
+const SHEET_ID = '1UwExj6WycmRdKj5Ik_oetB1TnLCKo1bLKs2lo_KCLYg';
+const USERS_GID = '0'; // Usuarios y Beneficiarios
+const JOURNEYS_GID = '2104648175'; // Journey
+
+// Mapping from Sheet Role names to our internal Role type
+const ROLE_MAP: Record<string, Role> = {
+    'Gestor': 'MANAGER',
+    'Administrador': 'ADMIN',
+    'Mentor': 'MENTOR',
+    'Asesor': 'ADVISOR',
+    'Coach': 'COACH',
+    'Empresa': 'ENTREPRENEUR',
+    'Emprendedor': 'ENTREPRENEUR'
+};
+
+/**
+ * Simple CSV Parser to avoid external dependencies
+ */
+const parseCSV = (csv: string) => {
+    const lines = csv.split(/\r?\n/);
+    if (lines.length === 0) return [];
+
+    // Support for quoted commas
+    const parseLine = (line: string) => {
+        const result = [];
+        let cur = '';
+        let inQuote = false;
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"' && line[i + 1] === '"') {
+                cur += '"'; i++;
+            } else if (char === '"') {
+                inQuote = !inQuote;
+            } else if (char === ',' && !inQuote) {
+                result.push(cur.trim());
+                cur = '';
+            } else {
+                cur += char;
+            }
+        }
+        result.push(cur.trim());
+        return result;
+    };
+
+    const headers = parseLine(lines[0]);
+    return lines.slice(1).filter(line => line.trim()).map(line => {
+        const values = parseLine(line);
+        const obj: any = {};
+        headers.forEach((header, i) => {
+            obj[header] = values[i];
+        });
+        return obj;
+    });
+};
+
+export const syncUsersFromSheet = async (): Promise<User[]> => {
+    try {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${USERS_GID}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch users from Google Sheets');
+        const csvText = await response.text();
+        const rawData = parseCSV(csvText);
+
+        // Map to our User type
+        return rawData.map((row: any, index: number) => {
+            const email = row['Correo electrónico'] || row['Correo'] || row['Email'];
+            const rawRole = row['Rol'] || 'ENTREPRENEUR';
+            const role = ROLE_MAP[rawRole] || 'ENTREPRENEUR';
+
+            return {
+                id: `sheet-${index}`,
+                name: row['Nombre'] || row['Nombre completo'] || email?.split('@')[0] || 'Usuario',
+                email: email || '',
+                role: role
+            };
+        }).filter(u => u.email !== '');
+    } catch (error) {
+        console.error('Sync Error:', error);
+        throw error;
+    }
+};
+
+export const syncJourneysFromSheet = async (): Promise<JourneyStep[]> => {
+    try {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${JOURNEYS_GID}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch journeys from Google Sheets');
+        const csvText = await response.text();
+        const rawData = parseCSV(csvText);
+
+        return rawData.map((row: any, index: number) => {
+            const hours = parseInt(row['Horas']) || 0;
+            return {
+                id: row['ID'] || `step-${index}`,
+                stage: row['Etapa'] || 'General',
+                activity: row['Actividad'] || 'Sin nombre',
+                type: row['Tipo de actividad'] || 'Sesión',
+                weight: row['Peso porcentual'] || '0,00%',
+                hours: hours
+            };
+        }).filter(s => s.activity !== 'Sin nombre');
+    } catch (error) {
+        console.error('Journey Sync Error:', error);
+        throw error;
+    }
+};
+
+export const getCachedJourneys = (): JourneyStep[] => {
+    const cached = localStorage.getItem('synced_journeys');
+    return cached ? JSON.parse(cached) : [];
+};
+
+export const saveJourneysToCache = (journeys: JourneyStep[]) => {
+    localStorage.setItem('synced_journeys', JSON.stringify(journeys));
+};
+export const getCachedUsers = (): User[] => {
+    const cached = localStorage.getItem('synced_users');
+    return cached ? JSON.parse(cached) : [];
+};
+
+export const saveUsersToCache = (users: User[]) => {
+    localStorage.setItem('synced_users', JSON.stringify(users));
+};
