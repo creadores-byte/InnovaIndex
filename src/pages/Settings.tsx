@@ -10,7 +10,7 @@ import {
     ShieldCheck,
     Wand2
 } from 'lucide-react';
-import { getSheetId, saveSheetId } from '../services/googleSheets';
+import { getSheetId, saveSheetId, createSheetStructure } from '../services/googleSheets';
 import { initGoogleAuth, requestAccessToken, getAccessToken } from '../services/googleAuth';
 
 const Settings: React.FC = () => {
@@ -65,9 +65,10 @@ const Settings: React.FC = () => {
         setError(null);
 
         try {
-            // Logic for batchUpdate to create sheets will go in the service, 
-            // but for now we'll mock the success to show UI progress
-            await new Promise(r => setTimeout(r, 2000));
+            const token = getAccessToken();
+            if (!token) throw new Error('No access token');
+
+            await createSheetStructure(token, sheetId);
 
             setSaved(true);
         } catch (err) {
