@@ -135,12 +135,29 @@ export const createSheetStructure = async (token: string, spreadsheetId: string)
 
     if (!response.ok) {
         const err = await response.json();
-        // If sheet already exists, we might get an error, but that's okay for an init
-        if (err.error?.message?.includes('already exists')) return true;
-        throw new Error('Failed to create sheets');
+        if (!err.error?.message?.includes('already exists')) throw new Error('Failed to create sheets');
     }
 
-    // Now add headers (Optional improvement: another batchUpdate for values)
+    // Now add headers for each sheet
+    const valueUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`;
+    const headerData = [
+        { range: "'Usuarios y Beneficiarios'!A1", values: [['Nombre', 'Correo electrónico', 'Rol']] },
+        { range: "'Base empresas'!A1", values: [['Empresa', 'NIT', 'Correo']] },
+        { range: "'Journey'!A1", values: [['Etapa', 'Actividad', 'Peso porcentual', 'Horas']] }
+    ];
+
+    await fetch(valueUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            valueInputOption: 'RAW',
+            data: headerData
+        })
+    });
+
     return true;
 };
 
