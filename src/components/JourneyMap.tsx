@@ -39,14 +39,14 @@ const JourneyMap: React.FC<JourneyMapProps> = ({ steps }) => {
                                     </div>
                                     <div className="step-content">
                                         <div className="step-type">{step.type}</div>
-                                        <h4 className="step-activity">{step.activity}</h4>
+                                        <h4 className="step-activity">{step.description}</h4>
                                         <div className="step-footer">
                                             <span className="step-hours">
                                                 <Clock size={12} />
                                                 {step.hours}h
                                             </span>
                                             <span className="step-weight">
-                                                {step.weight}
+                                                {step.deliverable}
                                             </span>
                                         </div>
                                     </div>
