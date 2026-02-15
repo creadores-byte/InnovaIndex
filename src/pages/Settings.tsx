@@ -10,7 +10,7 @@ import {
     ShieldCheck,
     Wand2
 } from 'lucide-react';
-import { getSheetId, saveSheetId, createSheetStructure } from '../services/googleSheets';
+import { getSheetId, saveSheetId, createSheetStructure, migrateExampleData } from '../services/googleSheets';
 import { initGoogleAuth, requestAccessToken, getAccessToken } from '../services/googleAuth';
 
 const Settings: React.FC = () => {

@@ -959,6 +959,45 @@ h3 {
   animation: spin 1s linear infinite;
 }
 
+.action-box-setup.migration {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  margin-top: 1rem;
+}
+
+.action-box-setup.migration h4 {
+  color: #15803d;
+}
+
+.action-box-setup.migration p {
+  color: #15803d;
+}
+
+.btn-secondary-outline {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.8rem 1.5rem;
+  background: white;
+  color: #15803d;
+  border: 1.5px solid #15803d;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary-outline:hover:not(:disabled) {
+  background: rgba(21, 128, 61, 0.05);
+  transform: scale(1.05);
+}
+
+.btn-secondary-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @keyframes spin {
   from {
     transform: rotate(0deg);

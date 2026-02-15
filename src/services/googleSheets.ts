@@ -161,6 +161,41 @@ export const createSheetStructure = async (token: string, spreadsheetId: string)
     return true;
 };
 
+export const migrateExampleData = async (token: string, spreadsheetId: string) => {
+    // Source Sheets IDs
+    const SOURCE_ID = DEFAULT_SHEET_ID;
+    const sources = [
+        { name: 'Usuarios y Beneficiarios', gid: '0' },
+        { name: 'Base empresas', gid: '782223446' },
+        { name: 'Journey', gid: '2104648175' }
+    ];
+
+    for (const source of sources) {
+        const fetchUrl = `https://docs.google.com/spreadsheets/d/${SOURCE_ID}/export?format=csv&gid=${source.gid}`;
+        const res = await fetch(fetchUrl);
+        if (!res.ok) continue;
+
+        const csvText = await res.text();
+        const rows = csvText.split('\n').map(row => {
+            // Handle quotes and commas simply for this migration
+            return row.split(',').map(cell => cell.replace(/^"(.*)"$/, '$1').trim());
+        });
+
+        // Push to target via API
+        const targetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/'${source.name}'!A1?valueInputOption=USER_ENTERED`;
+        await fetch(targetUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ values: rows })
+        });
+    }
+
+    return true;
+};
+
 export const getCachedJourneys = (): JourneyStep[] => {
     const cached = localStorage.getItem('synced_journeys');
     return cached ? JSON.parse(cached) : [];
