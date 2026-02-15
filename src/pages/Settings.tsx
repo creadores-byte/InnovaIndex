@@ -19,6 +19,7 @@ const Settings: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [isInitializing, setIsInitializing] = useState(false);
+    const [isMigrating, setIsMigrating] = useState(false);
 
     useEffect(() => {
         setSheetId(getSheetId());
@@ -75,6 +76,27 @@ const Settings: React.FC = () => {
             setError('Error al inicializar el archivo. Verifica los permisos.');
         } finally {
             setIsInitializing(false);
+        }
+    };
+
+    const handleMigrate = async () => {
+        if (!isConnected) {
+            setError('Debes conectar con Google primero.');
+            return;
+        }
+        setIsMigrating(true);
+        setError(null);
+
+        try {
+            const token = getAccessToken();
+            if (!token) throw new Error('No access token');
+
+            await migrateExampleData(token, sheetId);
+            setSaved(true);
+        } catch (err) {
+            setError('Error al migrar los datos. Verifica el acceso.');
+        } finally {
+            setIsMigrating(false);
         }
     };
 
@@ -144,6 +166,21 @@ const Settings: React.FC = () => {
                             >
                                 <Wand2 size={18} />
                                 <span>{isInitializing ? 'Configurando...' : 'Auto-Configurar Archivo'}</span>
+                            </button>
+                        </div>
+
+                        <div className="action-box-setup migration">
+                            <div className="setup-info">
+                                <h4>Migración de Datos</h4>
+                                <p>Copia el contenido real del archivo de ejemplo directamente a tu nuevo documento.</p>
+                            </div>
+                            <button
+                                className={`btn-secondary-outline ${isMigrating ? 'loading' : ''}`}
+                                onClick={handleMigrate}
+                                disabled={isMigrating || !isConnected}
+                            >
+                                <Copy size={18} />
+                                <span>{isMigrating ? 'Migrando...' : 'Cargar Datos de Ejemplo'}</span>
                             </button>
                         </div>
 
