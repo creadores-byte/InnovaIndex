@@ -19,6 +19,7 @@ const Settings: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [isInitializing, setIsInitializing] = useState(false);
+    const [syncMessage, setSyncMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
     useEffect(() => {
         setSheetId(getSheetId());
@@ -157,7 +158,14 @@ const Settings: React.FC = () => {
                         </div>
 
 
-                        {saved && (
+                        {syncMessage && (
+                            <div className={`settings-alert ${syncMessage.type} slide-in`}>
+                                {syncMessage.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                                <span>{syncMessage.text}</span>
+                            </div>
+                        )}
+
+                        {saved && !syncMessage && (
                             <div className="settings-alert success slide-in">
                                 <CheckCircle2 size={18} />
                                 <span>Operación exitosa.</span>
