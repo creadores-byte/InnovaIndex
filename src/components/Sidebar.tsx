@@ -22,12 +22,6 @@ const Sidebar: React.FC = () => {
 
     const navItems = [
         {
-            label: '!!! EMPRESAS !!!',
-            path: '/companies',
-            icon: <Users size={20} />,
-            roles: ['ADMIN', 'MANAGER', 'MENTOR', 'COACH', 'ADVISOR', 'ENTREPRENEUR']
-        },
-        {
             label: 'Dashboard',
             path: '/',
             icon: <LayoutDashboard size={20} />,
@@ -46,6 +40,12 @@ const Sidebar: React.FC = () => {
             roles: ['MANAGER', 'ADMIN']
         },
         {
+            label: 'Empresas',
+            path: '/companies',
+            icon: <Building2 size={20} />,
+            roles: ['ADMIN', 'MANAGER', 'MENTOR', 'COACH', 'ADVISOR', 'ENTREPRENEUR']
+        },
+        {
             label: 'Usuarios',
             path: '/users',
             icon: <Users size={20} />,
@@ -59,9 +59,9 @@ const Sidebar: React.FC = () => {
         },
     ];
 
-    const filteredItems = navItems; // DEBUG: Bypass filter
-    console.log('Sidebar Debug - User:', user);
-    console.log('Sidebar Debug - Items:', navItems);
+    const filteredItems = navItems.filter(item =>
+        user && item.roles.includes(user.role)
+    );
 
     return (
         <aside className="sidebar">

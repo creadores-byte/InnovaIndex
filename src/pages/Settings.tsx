@@ -51,7 +51,7 @@ const Settings: React.FC = () => {
             setIsConnected(true);
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
-        } catch (err) {
+        } catch (_err) {
             setError('Error al conectar con Google. Revisa la ventana emergente.');
         }
     };
@@ -63,6 +63,7 @@ const Settings: React.FC = () => {
         }
         setIsInitializing(true);
         setError(null);
+        setSyncMessage(null);
 
         try {
             const token = getAccessToken();
@@ -70,9 +71,11 @@ const Settings: React.FC = () => {
 
             await createSheetStructure(token, sheetId);
 
+            setSyncMessage({ text: 'Archivo inicializado correctamente.', type: 'success' });
             setSaved(true);
-        } catch (err) {
-            setError('Error al inicializar el archivo. Verifica los permisos.');
+            setTimeout(() => setSaved(false), 3000);
+        } catch (_error) {
+            setSyncMessage({ text: 'Error al sincronizar con Google Sheets. Verifica el acceso al documento.', type: 'error' });
         } finally {
             setIsInitializing(false);
         }

@@ -27,7 +27,7 @@ const ROLE_MAP: Record<string, Role> = {
 /**
  * Simple CSV Parser to avoid external dependencies
  */
-const parseCSV = (csv: string) => {
+const parseCSV = (csv: string): Record<string, string>[] => {
     const lines = csv.split(/\r?\n/);
     if (lines.length === 0) return [];
 
@@ -136,7 +136,7 @@ export const syncCompaniesFromSheet = async (): Promise<any[]> => {
         const csvText = await response.text();
         const rawData = parseCSV(csvText);
 
-        return rawData.map((row: any, index: number) => {
+        return rawData.map((row: Record<string, any>, index: number) => {
             const rowId = row['ID'];
             const nextId = (index + 1).toString().padStart(3, '0');
             return {

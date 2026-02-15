@@ -28,7 +28,7 @@ const UserManagement: React.FC = () => {
             setUsers(freshUsers);
             saveUsersToCache(freshUsers);
             setSyncMessage({ text: `¡Sincronización exitosa! ${freshUsers.length} usuarios cargados.`, type: 'success' });
-        } catch (error) {
+        } catch (_error) {
             setSyncMessage({ text: 'Error al sincronizar con Google Sheets. Verifica el acceso al documento.', type: 'error' });
         } finally {
             setLoading(false);
