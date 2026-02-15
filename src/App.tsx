@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Availability from './pages/Availability';
 import Scheduling from './pages/Scheduling';
 import UserManagement from './pages/UserManagement';
+import CompanyManagement from './pages/CompanyManagement';
 import Settings from './pages/Settings';
 import './index.css';
 
