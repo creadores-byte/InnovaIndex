@@ -6,7 +6,8 @@ import {
     Users,
     Settings,
     LogOut,
-    CalendarDays
+    CalendarDays,
+    Building2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -39,10 +40,16 @@ const Sidebar: React.FC = () => {
             roles: ['MANAGER', 'ADMIN']
         },
         {
-            label: 'Usuarios',
+            label: 'Gestión Usuarios',
             path: '/users',
             icon: <Users size={20} />,
-            roles: ['ADMIN']
+            roles: ['ADMIN', 'MANAGER']
+        },
+        {
+            label: 'Empresas',
+            path: '/companies',
+            icon: <Building2 size={20} />,
+            roles: ['ADMIN', 'MANAGER']
         },
         {
             label: 'Configuración',

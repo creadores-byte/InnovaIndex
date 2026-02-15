@@ -84,8 +84,14 @@ const Settings: React.FC = () => {
 
     const requiredTabs = [
         { name: 'Usuarios y Beneficiarios', columns: ['Nombre', 'Correo electrónico', 'Rol'] },
-        { name: 'Base empresas', columns: ['Empresa', 'NIT', 'Correo'] },
-        { name: 'Journey', columns: ['Etapa', 'Actividad', 'Peso porcentual', 'Horas'] }
+        { name: 'Base empresas', columns: ['ID', 'Razón social', 'NIT', 'Correo', 'Teléfono', 'Dirección'] },
+        {
+            name: 'Journey',
+            columns: [
+                'Fase', 'Etapa', 'Mes', 'Código', 'Tipo', 'Horas (h)',
+                'Descripción de la actividad', 'Entregable', 'Semanas Cohortes'
+            ]
+        }
     ];
 
     return (

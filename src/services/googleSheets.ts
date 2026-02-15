@@ -3,6 +3,7 @@ import type { User, Role, JourneyStep } from '../types';
 const DEFAULT_SHEET_ID = '1UwExj6WycmRdKj5Ik_oetB1TnLCKo1bLKs2lo_KCLYg';
 const USERS_GID = '0'; // Usuarios y Beneficiarios
 const JOURNEYS_GID = '2104648175'; // Journey
+const COMPANIES_GID = '782223446'; // Base empresas
 
 export const getSheetId = () => {
     return localStorage.getItem('google_sheet_id') || DEFAULT_SHEET_ID;
@@ -99,18 +100,56 @@ export const syncJourneysFromSheet = async (): Promise<JourneyStep[]> => {
         const rawData = parseCSV(csvText);
 
         return rawData.map((row: any, index: number) => {
-            const hours = parseInt(row['Horas']) || 0;
             return {
-                id: row['ID'] || `step-${index}`,
+                id: row['Código'] || row['ID'] || `step-${index}`,
+                fase: row['Fase'] || '',
                 stage: row['Etapa'] || 'General',
-                activity: row['Actividad'] || 'Sin nombre',
-                type: row['Tipo de actividad'] || 'Sesión',
-                weight: row['Peso porcentual'] || '0,00%',
-                hours: hours
+                month: row['Mes'] || '',
+                type: row['Tipo'] || row['Tipo de actividad'] || 'Sesión',
+                hours: parseInt(row['Horas (h)']) || parseInt(row['Horas']) || 0,
+                additional: row['Adicional'] || '',
+                description: row['Descripción de la actividad'] || row['Actividad'] || '',
+                deliverable: row['Entregable'] || '',
+                cohort1: {
+                    week: row['Semana del 2026 cohorte 1'] || '',
+                    startDate: row['Fecha inicio (C1)'] || row['Fecha inicio'] || '',
+                    month: row['Mes (C1)'] || row['Mes'] || ''
+                },
+                cohort2: {
+                    week: row['Semana del 2026 cohorte 2'] || '',
+                    startDate: row['Fecha inicio (C2)'] || '',
+                    month: row['Mes (C2)'] || ''
+                }
             };
-        }).filter(s => s.activity !== 'Sin nombre');
+        }).filter(s => s.description !== '');
     } catch (error) {
         console.error('Journey Sync Error:', error);
+        throw error;
+    }
+};
+
+export const syncCompaniesFromSheet = async (): Promise<any[]> => {
+    try {
+        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${COMPANIES_GID}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch companies from Google Sheets');
+        const csvText = await response.text();
+        const rawData = parseCSV(csvText);
+
+        return rawData.map((row: any, index: number) => {
+            const rowId = row['ID'];
+            const nextId = (index + 1).toString().padStart(3, '0');
+            return {
+                id: rowId && rowId.trim() !== '' ? rowId : `EMP-${nextId}`,
+                name: row['Razón social'] || row['Empresa'] || 'Empresa sin nombre',
+                nit: row['NIT'] || '',
+                email: row['Correo'] || '',
+                phone: row['Teléfono'] || '',
+                address: row['Dirección'] || ''
+            };
+        });
+    } catch (error) {
+        console.error('Company Sync Error:', error);
         throw error;
     }
 };
@@ -142,8 +181,16 @@ export const createSheetStructure = async (token: string, spreadsheetId: string)
     const valueUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`;
     const headerData = [
         { range: "'Usuarios y Beneficiarios'!A1", values: [['Nombre', 'Correo electrónico', 'Rol']] },
-        { range: "'Base empresas'!A1", values: [['Empresa', 'NIT', 'Correo']] },
-        { range: "'Journey'!A1", values: [['Etapa', 'Actividad', 'Peso porcentual', 'Horas']] }
+        { range: "'Base empresas'!A1", values: [['ID', 'Razón social', 'NIT', 'Correo', 'Teléfono', 'Dirección']] },
+        {
+            range: "'Journey'!A1",
+            values: [[
+                'Fase', 'Etapa', 'Mes', 'Código', 'Tipo', 'Horas (h)', 'Adicional',
+                'Descripción de la actividad', 'Entregable',
+                'Semana del 2026 cohorte 1', 'Fecha inicio (C1)', 'Mes (C1)',
+                'Semana del 2026 cohorte 2', 'Fecha inicio (C2)', 'Mes (C2)'
+            ]]
+        }
     ];
 
     await fetch(valueUrl, {
@@ -211,4 +258,13 @@ export const getCachedUsers = (): User[] => {
 
 export const saveUsersToCache = (users: User[]) => {
     localStorage.setItem('synced_users', JSON.stringify(users));
+};
+
+export const getCachedCompanies = (): any[] => {
+    const cached = localStorage.getItem('synced_companies');
+    return cached ? JSON.parse(cached) : [];
+};
+
+export const saveCompaniesToCache = (companies: any[]) => {
+    localStorage.setItem('synced_companies', JSON.stringify(companies));
 };

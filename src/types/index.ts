@@ -43,11 +43,33 @@ export interface DayAvailability {
     templateId?: string;
   }[];
 }
+export interface Company {
+  id: string; // Unique ID (e.g., EMP-001)
+  name: string; // Razón social
+  nit: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
 export interface JourneyStep {
-  id: string;
-  stage: string;
-  activity: string;
-  type: string;
-  weight: string;
-  hours: number;
+  id: string; // Código
+  fase: string;
+  stage: string; // Etapa
+  month: string; // Mes
+  type: string; // Tipo
+  hours: number; // Horas (h)
+  additional: string; // Adicional
+  description: string; // Descripción de la actividad
+  deliverable: string; // Entregable
+  cohort1: {
+    week: string;
+    startDate: string;
+    month: string;
+  };
+  cohort2: {
+    week: string;
+    startDate: string;
+    month: string;
+  };
 }

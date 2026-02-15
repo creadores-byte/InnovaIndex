@@ -43,8 +43,9 @@ const App: React.FC = () => {
               </Route>
 
               {/* User Management Routes */}
-              <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+              <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']} />}> {/* Modified allowedRoles */}
                 <Route path="/users" element={<UserManagement />} />
+                <Route path="/companies" element={<CompanyManagement />} /> {/* Added CompanyManagement route */}
                 <Route path="/settings" element={<Settings />} />
               </Route>
             </Route>
