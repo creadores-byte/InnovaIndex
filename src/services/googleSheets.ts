@@ -1,9 +1,15 @@
 import type { User, Role, JourneyStep } from '../types';
 
-const DEFAULT_SHEET_ID = '1UwExj6WycmRdKj5Ik_oetB1TnLCKo1bLKs2lo_KCLYg';
+const DEFAULT_SHEET_ID = '1twbpe7GYlgHkzRtOJ1p0ndS2Qh7MzHn1u5_XpwTyX0s';
 const USERS_GID = '0'; // Usuarios y Beneficiarios
-const JOURNEYS_GID = '2104648175'; // Journey
 const COMPANIES_GID = '782223446'; // Base empresas
+
+export const JOURNEY_CONFIG = {
+    '2025': '1356151252',
+    '2026': '1478184624'
+} as const;
+
+export type JourneyYear = keyof typeof JOURNEY_CONFIG;
 
 export const getSheetId = () => {
     return localStorage.getItem('google_sheet_id') || DEFAULT_SHEET_ID;
@@ -91,11 +97,12 @@ export const syncUsersFromSheet = async (): Promise<User[]> => {
     }
 };
 
-export const syncJourneysFromSheet = async (): Promise<JourneyStep[]> => {
+export const syncJourneysFromSheet = async (year: JourneyYear = '2026'): Promise<JourneyStep[]> => {
     try {
-        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${JOURNEYS_GID}`;
+        const gid = JOURNEY_CONFIG[year];
+        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${gid}`;
         const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to fetch journeys from Google Sheets');
+        if (!response.ok) throw new Error(`Failed to fetch journeys for ${year} from Google Sheets`);
         const csvText = await response.text();
         const rawData = parseCSV(csvText);
 
@@ -243,13 +250,13 @@ export const migrateExampleData = async (token: string, spreadsheetId: string) =
     return true;
 };
 
-export const getCachedJourneys = (): JourneyStep[] => {
-    const cached = localStorage.getItem('synced_journeys');
+export const getCachedJourneys = (year: JourneyYear = '2026'): JourneyStep[] => {
+    const cached = localStorage.getItem(`synced_journeys_${year}`);
     return cached ? JSON.parse(cached) : [];
 };
 
-export const saveJourneysToCache = (journeys: JourneyStep[]) => {
-    localStorage.setItem('synced_journeys', JSON.stringify(journeys));
+export const saveJourneysToCache = (journeys: JourneyStep[], year: JourneyYear = '2026') => {
+    localStorage.setItem(`synced_journeys_${year}`, JSON.stringify(journeys));
 };
 export const getCachedUsers = (): User[] => {
     const cached = localStorage.getItem('synced_users');
