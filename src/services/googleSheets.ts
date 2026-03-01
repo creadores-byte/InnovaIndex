@@ -1,6 +1,6 @@
 import type { User, Role, JourneyStep } from '../types';
 
-const DEFAULT_SHEET_ID = '1RRSRc12j0ZGGiMU3HAefug5uT6AII8RgXcFzoFtReOI';
+const DEFAULT_SHEET_ID = '1twbpe7GYlgHkzRtOJ1p0ndS2Qh7MzHn1u5_XpwTyX0s';
 const USERS_GID = '950125420'; // Usuarios y Beneficiarios
 const COMPANIES_GID = '677976126'; // Base empresas
 const DISPONIBILIDAD_GID = '868676344'; // Disponibilidad
