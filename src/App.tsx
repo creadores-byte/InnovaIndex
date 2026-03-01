@@ -8,7 +8,6 @@ import Availability from './pages/Availability';
 import Scheduling from './pages/Scheduling';
 import UserManagement from './pages/UserManagement';
 import CompanyManagement from './pages/CompanyManagement';
-import Settings from './pages/Settings';
 import './index.css';
 
 import Dashboard from './pages/Dashboard';
@@ -47,7 +46,6 @@ const App: React.FC = () => {
               <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']} />}> {/* Modified allowedRoles */}
                 <Route path="/users" element={<UserManagement />} />
                 <Route path="/companies" element={<CompanyManagement />} /> {/* Added CompanyManagement route */}
-                <Route path="/settings" element={<Settings />} />
               </Route>
             </Route>
           </Route>

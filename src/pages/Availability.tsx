@@ -29,6 +29,10 @@ import {
 import { es } from 'date-fns/locale';
 import type { AvailabilityTemplate, AvailabilityOverride } from '../types';
 import { generateMonthAvailability } from '../utils/availability';
+import { useAuth } from '../context/AuthContext';
+import { getAccessToken } from '../services/googleAuth';
+import { getSheetId, saveAvailabilityToSheet } from '../services/googleSheets';
+import { RefreshCcw } from 'lucide-react';
 
 // Helper for 15-min intervals
 const TIME_OPTIONS = Array.from({ length: 24 * 4 }, (_, i) => {
@@ -63,11 +67,57 @@ const Availability: React.FC = () => {
         loadData();
     }, []);
 
+    const { user } = useAuth();
+    const [isSyncing, setIsSyncing] = useState(false);
+
     const handleSave = () => {
         localStorage.setItem('availability_templates', JSON.stringify(templates));
         localStorage.setItem('availability_overrides', JSON.stringify(overrides));
         setIsDirty(false);
         alert('¡Cambios guardados con éxito!');
+    };
+
+    const handleSyncToSheets = async () => {
+        if (!user) return;
+        const token = getAccessToken();
+        if (!token) {
+            alert('Debes conectar con Google en Configuración primero.');
+            return;
+        }
+
+        setIsSyncing(true);
+        try {
+            // Generate data for next 3 months to sync
+            const allSlots: any[] = [];
+            const startDate = startOfMonth(new Date());
+
+            for (let i = 0; i < 3; i++) {
+                const month = addMonths(startDate, i);
+                const monthSlots = generateMonthAvailability(month, templates, overrides);
+                monthSlots.forEach(day => {
+                    day.slots.forEach(slot => {
+                        if (!slot.isCancelled) {
+                            allSlots.push({
+                                userName: user.name,
+                                userEmail: user.email,
+                                userRole: user.role,
+                                date: day.date,
+                                startTime: slot.startTime,
+                                endTime: slot.endTime
+                            });
+                        }
+                    });
+                });
+            }
+
+            await saveAvailabilityToSheet(token, getSheetId(), allSlots);
+            alert('¡Disponibilidad sincronizada con Google Sheets!');
+        } catch (error) {
+            console.error('Error syncing availability:', error);
+            alert('Error al sincronizar. Verifica tu conexión.');
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
     // Calculate day details for current month
@@ -208,6 +258,15 @@ const Availability: React.FC = () => {
                     <button onClick={handleSave} className={`btn-save ${isDirty ? 'pulsing' : ''}`} disabled={!isDirty}>
                         <Save size={18} />
                         <span className="desktop-only">Guardar</span>
+                    </button>
+                    <button
+                        onClick={handleSyncToSheets}
+                        className={`btn-sync ${isSyncing ? 'spinning' : ''}`}
+                        disabled={isSyncing}
+                        title="Sincronizar disponibilidad con Google Sheets"
+                    >
+                        <RefreshCcw size={18} />
+                        <span className="desktop-only">{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
                     </button>
                 </div>
             </header>

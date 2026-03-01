@@ -4,7 +4,6 @@ import {
     LayoutDashboard,
     CalendarClock,
     Users,
-    Settings,
     LogOut,
     CalendarDays,
     Building2
@@ -50,12 +49,6 @@ const Sidebar: React.FC = () => {
             path: '/users',
             icon: <Users size={20} />,
             roles: ['ADMIN', 'MANAGER']
-        },
-        {
-            label: 'Configuración',
-            path: '/settings',
-            icon: <Settings size={20} />,
-            roles: ['ADMIN']
         },
     ];
 

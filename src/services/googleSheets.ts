@@ -1,8 +1,9 @@
 import type { User, Role, JourneyStep } from '../types';
 
-const DEFAULT_SHEET_ID = '1twbpe7GYlgHkzRtOJ1p0ndS2Qh7MzHn1u5_XpwTyX0s';
-const USERS_GID = '0'; // Usuarios y Beneficiarios
-const COMPANIES_GID = '782223446'; // Base empresas
+const DEFAULT_SHEET_ID = '1RRSRc12j0ZGGiMU3HAefug5uT6AII8RgXcFzoFtReOI';
+const USERS_GID = '950125420'; // Usuarios y Beneficiarios
+const COMPANIES_GID = '677976126'; // Base empresas
+const DISPONIBILIDAD_GID = '868676344'; // Disponibilidad
 
 export const JOURNEY_CONFIG = {
     '2025': '1356151252',
@@ -12,12 +13,9 @@ export const JOURNEY_CONFIG = {
 export type JourneyYear = keyof typeof JOURNEY_CONFIG;
 
 export const getSheetId = () => {
-    return localStorage.getItem('google_sheet_id') || DEFAULT_SHEET_ID;
+    return DEFAULT_SHEET_ID;
 };
 
-export const saveSheetId = (id: string) => {
-    localStorage.setItem('google_sheet_id', id);
-};
 
 // Mapping from Sheet Role names to our internal Role type
 const ROLE_MAP: Record<string, Role> = {
@@ -34,12 +32,17 @@ const ROLE_MAP: Record<string, Role> = {
  * Simple CSV Parser to avoid external dependencies
  */
 const parseCSV = (csv: string): Record<string, string>[] => {
-    const lines = csv.split(/\r?\n/);
+    const lines = csv.split(/\r?\n/).filter(line => line.trim().length > 0);
     if (lines.length === 0) return [];
 
-    // Support for quoted commas
+    // Detect delimiter (comma or semicolon)
+    const firstLine = lines[0];
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    const semiCount = (firstLine.match(/;/g) || []).length;
+    const delimiter = semiCount > commaCount ? ';' : ',';
+
     const parseLine = (line: string) => {
-        const result = [];
+        const result: string[] = [];
         let cur = '';
         let inQuote = false;
         for (let i = 0; i < line.length; i++) {
@@ -48,7 +51,7 @@ const parseCSV = (csv: string): Record<string, string>[] => {
                 cur += '"'; i++;
             } else if (char === '"') {
                 inQuote = !inQuote;
-            } else if (char === ',' && !inQuote) {
+            } else if (char === delimiter && !inQuote) {
                 result.push(cur.trim());
                 cur = '';
             } else {
@@ -60,11 +63,13 @@ const parseCSV = (csv: string): Record<string, string>[] => {
     };
 
     const headers = parseLine(lines[0]);
-    return lines.slice(1).filter(line => line.trim()).map(line => {
+    return lines.slice(1).map(line => {
         const values = parseLine(line);
         const obj: any = {};
         headers.forEach((header, i) => {
-            obj[header] = values[i];
+            if (header) {
+                obj[header] = values[i] || '';
+            }
         });
         return obj;
     });
@@ -72,7 +77,7 @@ const parseCSV = (csv: string): Record<string, string>[] => {
 
 export const syncUsersFromSheet = async (): Promise<User[]> => {
     try {
-        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${USERS_GID}`;
+        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${USERS_GID}&t=${Date.now()}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch users from Google Sheets');
         const csvText = await response.text();
@@ -100,7 +105,7 @@ export const syncUsersFromSheet = async (): Promise<User[]> => {
 export const syncJourneysFromSheet = async (year: JourneyYear = '2026'): Promise<JourneyStep[]> => {
     try {
         const gid = JOURNEY_CONFIG[year];
-        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${gid}`;
+        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${gid}&t=${Date.now()}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Failed to fetch journeys for ${year} from Google Sheets`);
         const csvText = await response.text();
@@ -137,7 +142,7 @@ export const syncJourneysFromSheet = async (year: JourneyYear = '2026'): Promise
 
 export const syncCompaniesFromSheet = async (): Promise<any[]> => {
     try {
-        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${COMPANIES_GID}`;
+        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${COMPANIES_GID}&t=${Date.now()}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch companies from Google Sheets');
         const csvText = await response.text();
@@ -161,13 +166,36 @@ export const syncCompaniesFromSheet = async (): Promise<any[]> => {
     }
 };
 
+export const syncAvailabilityFromSheet = async (): Promise<any[]> => {
+    try {
+        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${DISPONIBILIDAD_GID}&t=${Date.now()}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch availability from Google Sheets');
+        const csvText = await response.text();
+        const rawData = parseCSV(csvText);
+
+        return rawData.map((row: any) => ({
+            userName: row['Nombre'] || row['UserName'] || '',
+            userEmail: row['Correo'] || row['UserEmail'] || '',
+            userRole: row['Rol'] || row['UserRole'] || '',
+            date: row['Fecha'] || row['Date'] || '',
+            startTime: row['Inicio'] || row['StartTime'] || '',
+            endTime: row['Fin'] || row['EndTime'] || ''
+        })).filter(s => s.userEmail !== '' && s.date !== '');
+    } catch (error) {
+        console.error('Availability Sync Error:', error);
+        throw error;
+    }
+};
+
 export const createSheetStructure = async (token: string, spreadsheetId: string) => {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`;
 
     const requests = [
         { addSheet: { properties: { title: 'Usuarios y Beneficiarios', gridProperties: { rowCount: 100, columnCount: 10 } } } },
         { addSheet: { properties: { title: 'Base empresas', gridProperties: { rowCount: 100, columnCount: 10 } } } },
-        { addSheet: { properties: { title: 'Journey', gridProperties: { rowCount: 100, columnCount: 10 } } } }
+        { addSheet: { properties: { title: 'Journey', gridProperties: { rowCount: 100, columnCount: 10 } } } },
+        { addSheet: { properties: { title: 'Disponibilidad', gridProperties: { rowCount: 500, columnCount: 10 } } } }
     ];
 
     const response = await fetch(url, {
@@ -274,4 +302,43 @@ export const getCachedCompanies = (): any[] => {
 
 export const saveCompaniesToCache = (companies: any[]) => {
     localStorage.setItem('synced_companies', JSON.stringify(companies));
+};
+
+export const getCachedAvailability = (): any[] => {
+    const cached = localStorage.getItem('synced_availability');
+    return cached ? JSON.parse(cached) : [];
+};
+
+export const saveAvailabilityToCache = (availability: any[]) => {
+    localStorage.setItem('synced_availability', JSON.stringify(availability));
+};
+
+export const saveAvailabilityToSheet = async (token: string, spreadsheetId: string, availabilityData: any[]) => {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/'Disponibilidad'!A2:F?valueInputOption=USER_ENTERED`;
+
+    // Clear existing data first (optional, but requested structure seems like a clean sync)
+    // Actually, usually for availability we might want to APPEND or OVERWRITE.
+    // The user said "de ahora en adelante, lo que guarden será guardado en esta tabla".
+    // I'll overwrite the whole table for simplicity unless I see an append need.
+
+    const rows = availabilityData.map(slot => [
+        slot.userName,
+        slot.userEmail,
+        slot.userRole,
+        slot.date,
+        slot.startTime,
+        slot.endTime
+    ]);
+
+    // To prevent clearing the header, we'll just PUT to A2
+    await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ values: rows })
+    });
+
+    return true;
 };

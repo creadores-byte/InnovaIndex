@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Users as UsersIcon,
     CheckSquare,
     Square,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    RefreshCcw
 } from 'lucide-react';
 import {
     format,
@@ -18,26 +19,52 @@ import {
     isSameMonth
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { User, AvailabilityTemplate } from '../types';
-
-// Mock Users Data (In a real app, this would come from an API/DB)
-const MOCK_MENTORS: User[] = [
-    { id: 'm1', name: 'Alvaro Asesor', email: 'alvaro@comfandi.com', role: 'ADVISOR' },
-    { id: 'm2', name: 'Beatriz Mentor', email: 'beatriz@comfandi.com', role: 'MENTOR' },
-    { id: 'm3', name: 'Carlos Coach', email: 'carlos@comfandi.com', role: 'COACH' },
-];
+import type { User } from '../types';
+import {
+    getCachedUsers,
+    syncAvailabilityFromSheet,
+    getCachedAvailability,
+    saveAvailabilityToCache
+} from '../services/googleSheets';
 
 const Scheduling: React.FC = () => {
     const [currentMonth, setCurrentMonth] = useState(new Date());
-    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([MOCK_MENTORS[0].id]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [availability, setAvailability] = useState<any[]>([]);
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [syncMessage, setSyncMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-    // In a real app, we'd fetch availability for all selected users
-    // For now, we simulate shared availability logic
-    const [allTemplates] = useState<Record<string, AvailabilityTemplate[]>>({
-        'm1': [{ id: 't1', dayOfWeek: 1, startTime: '08:00', endTime: '12:00', weeksCount: 12 }],
-        'm2': [{ id: 't2', dayOfWeek: 1, startTime: '10:00', endTime: '14:00', weeksCount: 12 }],
-        'm3': [{ id: 't3', dayOfWeek: 3, startTime: '09:00', endTime: '13:00', weeksCount: 12 }],
-    });
+    useEffect(() => {
+        // Load mentors/coaches/advisors from cache
+        const allUsers = getCachedUsers();
+        const mentors = allUsers.filter(u => ['MENTOR', 'COACH', 'ADVISOR', 'ADMIN'].includes(u.role));
+        setUsers(mentors);
+
+        // Load availability from cache
+        const cachedAvailability = getCachedAvailability();
+        setAvailability(cachedAvailability);
+
+        // Auto-select first mentor if available
+        if (mentors.length > 0 && selectedUserIds.length === 0) {
+            setSelectedUserIds([mentors[0].id]);
+        }
+    }, []);
+
+    const handleSync = async () => {
+        setLoading(true);
+        setSyncMessage(null);
+        try {
+            const freshAvailability = await syncAvailabilityFromSheet();
+            setAvailability(freshAvailability);
+            saveAvailabilityToCache(freshAvailability);
+            setSyncMessage({ text: '¡Disponibilidad sincronizada con éxito!', type: 'success' });
+        } catch (error) {
+            setSyncMessage({ text: 'Error al sincronizar disponibilidad.', type: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const daysInGrid = useMemo(() => {
         const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 });
@@ -55,6 +82,17 @@ const Scheduling: React.FC = () => {
         }
     };
 
+    // Filter availability for selected users
+    const filteredAvailability = useMemo(() => {
+        const selectedEmails = users
+            .filter(u => selectedUserIds.includes(u.id))
+            .map(u => u.email.toLowerCase());
+
+        return availability.filter(slot =>
+            selectedEmails.includes(slot.userEmail.toLowerCase())
+        );
+    }, [availability, selectedUserIds, users]);
+
     return (
         <div className="scheduling-page fade-in">
             <header className="page-header">
@@ -62,7 +100,23 @@ const Scheduling: React.FC = () => {
                     <h1>Agendamiento y Cruces</h1>
                     <p>Visualiza la disponibilidad de uno o varios mentores para coordinar sesiones.</p>
                 </div>
+                <div className="header-actions">
+                    <button
+                        className={`btn-sync ${loading ? 'spinning' : ''}`}
+                        onClick={handleSync}
+                        disabled={loading}
+                    >
+                        <RefreshCcw size={18} />
+                        <span>{loading ? 'Sincronizando...' : 'Sincronizar Disponibilidad'}</span>
+                    </button>
+                </div>
             </header>
+
+            {syncMessage && (
+                <div className={`sync-alert ${syncMessage.type} slide-in`}>
+                    {syncMessage.text}
+                </div>
+            )}
 
             <div className="scheduling-layout">
                 <aside className="filters-sidebar">
@@ -72,19 +126,22 @@ const Scheduling: React.FC = () => {
                             <h3>Seleccionar Mentores</h3>
                         </div>
                         <div className="user-selection-list">
-                            {MOCK_MENTORS.map(mentor => (
-                                <div
-                                    key={mentor.id}
-                                    className={`user-select-item ${selectedUserIds.includes(mentor.id) ? 'active' : ''}`}
-                                    onClick={() => toggleUserSelection(mentor.id)}
-                                >
-                                    {selectedUserIds.includes(mentor.id) ? <CheckSquare size={18} /> : <Square size={18} />}
-                                    <div className="user-mini-info">
-                                        <span className="name">{mentor.name}</span>
-                                        <span className="role-tag">{mentor.role}</span>
+                            {users.length === 0 ? (
+                                <p className="empty-hint">Sincroniza usuarios en Gestión de Usuarios primero.</p>
+                            ) : (
+                                users.map(user => (
+                                    <div
+                                        key={user.id}
+                                        className={`user-select-item ${selectedUserIds.includes(user.id) ? 'active' : ''}`}
+                                        onClick={() => toggleUserSelection(user.id)}
+                                    >
+                                        {selectedUserIds.includes(user.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                                        <div className="user-mini-info">
+                                            <span className="name">{user.name} <span className="separator">-</span> {user.role}</span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))
+                            )}
                         </div>
                     </div>
                 </aside>
@@ -108,6 +165,10 @@ const Scheduling: React.FC = () => {
                         ))}
                         {daysInGrid.map((day: Date, idx: number) => {
                             const isCurrentMonth = isSameMonth(day, currentMonth);
+                            const dateStr = format(day, 'yyyy-MM-dd');
+
+                            // Find slots for this specific day
+                            const daySlots = filteredAvailability.filter(s => s.date === dateStr);
 
                             return (
                                 <div
@@ -116,17 +177,16 @@ const Scheduling: React.FC = () => {
                                 >
                                     <span className="day-number">{format(day, 'd')}</span>
                                     <div className="day-slots multi-user-slots">
-                                        {selectedUserIds.map(uid => {
-                                            const userTemplates = allTemplates[uid] || [];
-                                            const dayTemplates = userTemplates.filter(t => t.dayOfWeek === (day.getDay() === 0 ? 7 : day.getDay())); // Simple check
-
-                                            return dayTemplates.map(t => (
-                                                <div key={`${uid}-${t.id}`} className="mini-slot pill-user" title={MOCK_MENTORS.find(m => m.id === uid)?.name}>
-                                                    <span className="user-initials">{MOCK_MENTORS.find(m => m.id === uid)?.name.charAt(0)}</span>
-                                                    <span className="time">{t.startTime} - {t.endTime}</span>
-                                                </div>
-                                            ));
-                                        })}
+                                        {daySlots.map((slot, sIdx) => (
+                                            <div
+                                                key={`${slot.userEmail}-${sIdx}`}
+                                                className="mini-slot pill-user"
+                                                title={`${slot.userName} (${slot.userRole}): ${slot.startTime} - ${slot.endTime}`}
+                                            >
+                                                <span className="user-initials">{slot.userName.charAt(0)}</span>
+                                                <span className="time">{slot.startTime} - {slot.endTime}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             );

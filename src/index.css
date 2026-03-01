@@ -104,6 +104,10 @@ h3 {
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
 }
 
 .sidebar-header {
@@ -1547,4 +1551,143 @@ h3 {
 
 .fade-in {
   animation: fadeIn 0.4s ease-out;
+}/* --- Scheduling Page --- */
+.scheduling-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.scheduling-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.filters-sidebar {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 2rem;
+}
+
+.filter-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.filter-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.user-selection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-select-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    background: #f8fafc;
+    color: var(--text-muted);
+}
+
+.user-select-item:hover {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+}
+
+.user-select-item.active {
+    background: rgba(0, 77, 64, 0.05);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.user-mini-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-mini-info .name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.user-mini-info .role-tag {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.calendar-main {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.multi-user-slots {
+    margin-top: 5px;
+}
+
+.mini-slot.pill-user {
+    background: white;
+    color: var(--primary);
+    border: 1px solid rgba(0, 77, 64, 0.2);
+    padding: 2px 8px;
+    font-size: 0.65rem;
+    gap: 6px;
+    box-shadow: none;
+}
+
+.mini-slot.pill-user:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.user-initials {
+    width: 18px;
+    height: 18px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.6rem;
+}
+
+.mini-slot.pill-user:hover .user-initials {
+    background: white;
+    color: var(--primary);
+}
+
+@media (max-width: 1100px) {
+    .scheduling-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .filters-sidebar {
+        position: relative;
+        top: 0;
+    }
 }
