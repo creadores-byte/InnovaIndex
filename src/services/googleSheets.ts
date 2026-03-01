@@ -1,4 +1,5 @@
 import type { User, Role, JourneyStep } from '../types';
+import { getAccessToken, requestAccessToken } from './googleAuth';
 
 const DEFAULT_SHEET_ID = '1twbpe7GYlgHkzRtOJ1p0ndS2Qh7MzHn1u5_XpwTyX0s';
 const USERS_GID = '950125420'; // Usuarios y Beneficiarios
@@ -77,8 +78,11 @@ const parseCSV = (csv: string): Record<string, string>[] => {
 
 export const syncUsersFromSheet = async (): Promise<User[]> => {
     try {
+        let token = getAccessToken();
+        if (!token) token = await requestAccessToken();
+
         const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${USERS_GID}&t=${Date.now()}`;
-        const response = await fetch(url);
+        const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!response.ok) throw new Error('Failed to fetch users from Google Sheets');
         const csvText = await response.text();
         const rawData = parseCSV(csvText);
@@ -104,9 +108,12 @@ export const syncUsersFromSheet = async (): Promise<User[]> => {
 
 export const syncJourneysFromSheet = async (year: JourneyYear = '2026'): Promise<JourneyStep[]> => {
     try {
+        let token = getAccessToken();
+        if (!token) token = await requestAccessToken();
+
         const gid = JOURNEY_CONFIG[year];
         const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${gid}&t=${Date.now()}`;
-        const response = await fetch(url);
+        const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!response.ok) throw new Error(`Failed to fetch journeys for ${year} from Google Sheets`);
         const csvText = await response.text();
         const rawData = parseCSV(csvText);
@@ -142,8 +149,11 @@ export const syncJourneysFromSheet = async (year: JourneyYear = '2026'): Promise
 
 export const syncCompaniesFromSheet = async (): Promise<any[]> => {
     try {
+        let token = getAccessToken();
+        if (!token) token = await requestAccessToken();
+
         const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${COMPANIES_GID}&t=${Date.now()}`;
-        const response = await fetch(url);
+        const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!response.ok) throw new Error('Failed to fetch companies from Google Sheets');
         const csvText = await response.text();
         const rawData = parseCSV(csvText);
@@ -168,8 +178,11 @@ export const syncCompaniesFromSheet = async (): Promise<any[]> => {
 
 export const syncAvailabilityFromSheet = async (): Promise<any[]> => {
     try {
+        let token = getAccessToken();
+        if (!token) token = await requestAccessToken();
+
         const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${DISPONIBILIDAD_GID}&t=${Date.now()}`;
-        const response = await fetch(url);
+        const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!response.ok) throw new Error('Failed to fetch availability from Google Sheets');
         const csvText = await response.text();
         const rawData = parseCSV(csvText);
