@@ -29,47 +29,17 @@ const ROLE_MAP: Record<string, Role> = {
     'Emprendedor': 'ENTREPRENEUR'
 };
 
-/**
- * Simple CSV Parser to avoid external dependencies
- */
-const parseCSV = (csv: string): Record<string, string>[] => {
-    const lines = csv.split(/\r?\n/).filter(line => line.trim().length > 0);
-    if (lines.length === 0) return [];
+const parseSheetsJson = (json: any): Record<string, string>[] => {
+    if (!json.values || json.values.length === 0) return [];
 
-    // Detect delimiter (comma or semicolon)
-    const firstLine = lines[0];
-    const commaCount = (firstLine.match(/,/g) || []).length;
-    const semiCount = (firstLine.match(/;/g) || []).length;
-    const delimiter = semiCount > commaCount ? ';' : ',';
+    const headers = json.values[0] as string[];
+    const rows = json.values.slice(1) as string[][];
 
-    const parseLine = (line: string) => {
-        const result: string[] = [];
-        let cur = '';
-        let inQuote = false;
-        for (let i = 0; i < line.length; i++) {
-            const char = line[i];
-            if (char === '"' && line[i + 1] === '"') {
-                cur += '"'; i++;
-            } else if (char === '"') {
-                inQuote = !inQuote;
-            } else if (char === delimiter && !inQuote) {
-                result.push(cur.trim());
-                cur = '';
-            } else {
-                cur += char;
-            }
-        }
-        result.push(cur.trim());
-        return result;
-    };
-
-    const headers = parseLine(lines[0]);
-    return lines.slice(1).map(line => {
-        const values = parseLine(line);
+    return rows.map((row: string[]) => {
         const obj: any = {};
         headers.forEach((header, i) => {
             if (header) {
-                obj[header] = values[i] || '';
+                obj[header] = row[i] || '';
             }
         });
         return obj;
@@ -81,11 +51,11 @@ export const syncUsersFromSheet = async (): Promise<User[]> => {
         let token = getAccessToken();
         if (!token) token = await requestAccessToken();
 
-        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${USERS_GID}&t=${Date.now()}`;
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${getSheetId()}/values/'Usuarios y Beneficiarios'`;
         const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!response.ok) throw new Error('Failed to fetch users from Google Sheets');
-        const csvText = await response.text();
-        const rawData = parseCSV(csvText);
+        const json = await response.json();
+        const rawData = parseSheetsJson(json);
 
         // Map to our User type
         return rawData.map((row: any, index: number) => {
@@ -111,12 +81,11 @@ export const syncJourneysFromSheet = async (year: JourneyYear = '2026'): Promise
         let token = getAccessToken();
         if (!token) token = await requestAccessToken();
 
-        const gid = JOURNEY_CONFIG[year];
-        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${gid}&t=${Date.now()}`;
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${getSheetId()}/values/'Journey'`;
         const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!response.ok) throw new Error(`Failed to fetch journeys for ${year} from Google Sheets`);
-        const csvText = await response.text();
-        const rawData = parseCSV(csvText);
+        const json = await response.json();
+        const rawData = parseSheetsJson(json);
 
         return rawData.map((row: any, index: number) => {
             return {
@@ -152,11 +121,11 @@ export const syncCompaniesFromSheet = async (): Promise<any[]> => {
         let token = getAccessToken();
         if (!token) token = await requestAccessToken();
 
-        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${COMPANIES_GID}&t=${Date.now()}`;
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${getSheetId()}/values/'Base empresas'`;
         const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!response.ok) throw new Error('Failed to fetch companies from Google Sheets');
-        const csvText = await response.text();
-        const rawData = parseCSV(csvText);
+        const json = await response.json();
+        const rawData = parseSheetsJson(json);
 
         return rawData.map((row: Record<string, any>, index: number) => {
             const rowId = row['ID'];
@@ -181,11 +150,11 @@ export const syncAvailabilityFromSheet = async (): Promise<any[]> => {
         let token = getAccessToken();
         if (!token) token = await requestAccessToken();
 
-        const url = `https://docs.google.com/spreadsheets/d/${getSheetId()}/export?format=csv&gid=${DISPONIBILIDAD_GID}&t=${Date.now()}`;
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${getSheetId()}/values/'Disponibilidad'`;
         const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!response.ok) throw new Error('Failed to fetch availability from Google Sheets');
-        const csvText = await response.text();
-        const rawData = parseCSV(csvText);
+        const json = await response.json();
+        const rawData = parseSheetsJson(json);
 
         return rawData.map((row: any) => ({
             userName: row['Nombre'] || row['UserName'] || '',
